@@ -1,0 +1,319 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  BASE_COMMANDER
+  LOGISTICS_OFFICER
+}
+
+enum EquipmentCategory {
+  VEHICLE
+  WEAPON
+  AMMUNITION
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  IN_TRANSIT
+  MAINTENANCE
+  EXPENDED
+}
+
+enum TransferStatus {
+  PENDING
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  RETURNED
+}
+
+model Base {
+  id               Int      @id @default(autoincrement())
+  name             String
+  location         String
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  
+  users            User[]
+  assets           Asset[]
+  purchases        Purchase[]
+  assignments      Assignment[]
+  expenditures     Expenditure[]
+
+  transfersSource      Transfer[] @relation("SourceBaseToTransfer")
+  transfersDestination Transfer[] @relation("DestinationBaseToTransfer")
+
+  @@map("bases")
+}
+
+model User {
+  id               Int      @id @default(autoincrement())
+  username         String   @unique
+  passwordHash     String   @map("password_hash")
+  role             Role
+  baseId           Int?     @map("base_id")
+  base             Base?    @relation(fields: [baseId], references: [id])
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  purchasesCreated    Purchase[]
+  transfersInitiated  Transfer[]
+  assignmentsCreated  Assignment[]
+  expendituresRecorded Expenditure[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model EquipmentType {
+  id               Int      @id @default(autoincrement())
+  name             String
+  category         EquipmentCategory
+  description      String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  assets           Asset[]
+  purchases        Purchase[]
+  transfers        Transfer[]
+  assignments      Assignment[]
+  expenditures     Expenditure[]
+
+  @@map("equipment_types")
+}
+
+model Asset {
+  id               Int      @id @default(autoincrement())
+  equipmentTypeId  Int      @map("equipment_type_id")
+  equipmentType    EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+  baseId           Int      @map("base_id")
+  base             Base     @relation(fields: [baseId], references: [id])
+  serialNumber     String?  @map("serial_number")
+  status           AssetStatus @default(AVAILABLE)
+  quantity         Int      @default(1)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  assignments      Assignment[]
+  maintenance      Maintenance[]
+
+  @@map("assets")
+}
+
+model Purchase {
+  id               Int      @id @default(autoincrement())
+  baseId           Int      @map("base_id")
+  base             Base     @relation(fields: [baseId], references: [id])
+  equipmentTypeId  Int      @map("equipment_type_id")
+  equipmentType    EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+  quantity         Int
+  purchaseDate     DateTime @map("purchase_date")
+  referenceNumber  String   @map("reference_number")
+  createdById      Int      @map("created_by")
+  createdBy        User     @relation(fields: [createdById], references: [id])
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("purchases")
+}
+
+model Transfer {
+  id                  Int      @id @default(autoincrement())
+  sourceBaseId        Int      @map("source_base_id")
+  sourceBase          Base     @relation("SourceBaseToTransfer", fields: [sourceBaseId], references: [id])
+  destinationBaseId   Int      @map("destination_base_id")
+  destinationBase     Base     @relation("DestinationBaseToTransfer", fields: [destinationBaseId], references: [id])
+  equipmentTypeId     Int      @map("equipment_type_id")
+  equipmentType       EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+  quantity            Int
+  status              TransferStatus @default(PENDING)
+  initiatedById       Int      @map("initiated_by")
+  initiatedBy         User     @relation(fields: [initiatedById], references: [id])
+  timestamp           DateTime @default(now())
+
+  @@map("transfers")
+}
+
+model Assignment {
+  id               Int      @id @default(autoincrement())
+  baseId           Int      @map("base_id")
+  base             Base     @relation(fields: [baseId], references: [id])
+  equipmentTypeId  Int      @map("equipment_type_id")
+  equipmentType    EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+  assetId          Int?     @map("asset_id")
+  asset            Asset?   @relation(fields: [assetId], references: [id])
+  assignedTo       String   @map("assigned_to")
+  quantity         Int
+  assignedDate     DateTime @map("assigned_date")
+  status           AssignmentStatus @default(ACTIVE)
+  createdById      Int      @map("created_by")
+  createdBy        User     @relation(fields: [createdById], references: [id])
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("assignments")
+}
+
+model Expenditure {
+  id               Int      @id @default(autoincrement())
+  baseId           Int      @map("base_id")
+  base             Base     @relation(fields: [baseId], references: [id])
+  equipmentTypeId  Int      @map("equipment_type_id")
+  equipmentType    EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+  quantity         Int
+  reason           String
+  expenditureDate  DateTime @map("expenditure_date")
+  recordedById     Int      @map("recorded_by")
+  recordedBy       User     @relation(fields: [recordedById], references: [id])
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("expenditures")
+}
+
+model AuditLog {
+  id               Int      @id @default(autoincrement())
+  userId           Int?     @map("user_id")
+  user             User?    @relation(fields: [userId], references: [id])
+  action           String
+  details          String
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
+model Notification {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  type            String   // TRANSFER, PURCHASE, LOW_STOCK, APPROVAL, MAINTENANCE, SECURITY, SYSTEM
+  title           String
+  message         String
+  referenceType   String?  @map("reference_type")
+  referenceId     Int?     @map("reference_id")
+  isRead          Boolean  @default(false) @map("is_read")
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  @@map("notifications")
+}
+
+model Approval {
+  id              Int      @id @default(autoincrement())
+  requestType     String   @map("request_type") // e.g. TRANSFER, PURCHASE
+  requestId       Int      @map("request_id")
+  requestedById   Int      @map("requested_by")
+  reviewedById    Int?     @map("reviewed_by")
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  reason          String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  reviewedAt      DateTime? @map("reviewed_at")
+
+  @@map("approvals")
+}
+
+model InventoryThreshold {
+  id              Int      @id @default(autoincrement())
+  equipmentTypeId Int      @map("equipment_type_id")
+  baseId          Int      @map("base_id")
+  minimumStock    Int      @default(0) @map("minimum_stock")
+  criticalStock   Int      @default(0) @map("critical_stock")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("inventory_thresholds")
+}
+
+model Maintenance {
+  id              Int      @id @default(autoincrement())
+  assetId         Int      @map("asset_id")
+  asset           Asset    @relation(fields: [assetId], references: [id])
+  type            String
+  description     String
+  priority        String   // LOW, MEDIUM, HIGH, CRITICAL
+  status          String   @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, OVERDUE, CANCELLED
+  scheduledDate   DateTime? @map("scheduled_date")
+  startedDate     DateTime? @map("started_date")
+  completedDate   DateTime? @map("completed_date")
+  performedBy     String?  @map("performed_by")
+  cost            Float?
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("maintenance")
+}
+
+model AssetTimeline {
+  id              Int      @id @default(autoincrement())
+  assetId         Int      @map("asset_id")
+  eventType       String   @map("event_type") // CREATED, PURCHASED, TRANSFERRED, ASSIGNED, UNASSIGNED, MAINTENANCE, EXPENDED, UPDATED, INSPECTED, DISPOSED
+  description     String
+  referenceType   String?  @map("reference_type")
+  referenceId     Int?     @map("reference_id")
+  performedBy     Int?     @map("performed_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("asset_timeline")
+}
+
+model Document {
+  id              Int      @id @default(autoincrement())
+  name            String
+  fileUrl         String   @map("file_url")
+  fileType        String   @map("file_type")
+  fileSize        Int      @map("file_size")
+  referenceType   String?  @map("reference_type")
+  referenceId     Int?     @map("reference_id")
+  uploadedById    Int      @map("uploaded_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("documents")
+}
+
+model Anomaly {
+  id              Int      @id @default(autoincrement())
+  type            String
+  severity        String   // LOW, MEDIUM, HIGH, CRITICAL
+  baseId          Int?     @map("base_id")
+  equipmentTypeId Int?     @map("equipment_type_id")
+  referenceId     Int?     @map("reference_id")
+  description     String
+  status          String   @default("OPEN") // OPEN, REVIEWING, RESOLVED, DISMISSED
+  createdAt       DateTime @default(now()) @map("created_at")
+  resolvedAt      DateTime? @map("resolved_at")
+  resolvedById    Int?     @map("resolved_by")
+
+  @@map("anomalies")
+}
+
+model TwoFactorAuth {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique @map("user_id")
+  secret          String
+  isEnabled       Boolean  @default(false) @map("is_enabled")
+  recoveryCodes   String   @map("recovery_codes") // Stored as JSON string representation
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("two_factor_auth")
+}
+
+model InternalMessage {
+  id              Int      @id @default(autoincrement())
+  senderId        Int      @map("sender_id")
+  recipientId     Int      @map("recipient_id")
+  title           String
+  message         String
+  referenceType   String?  @map("reference_type")
+  referenceId     Int?     @map("reference_id")
+  isRead          Boolean  @default(false) @map("is_read")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("internal_messages")
+}

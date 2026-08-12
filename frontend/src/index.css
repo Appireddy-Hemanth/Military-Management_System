@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-military-100 text-text-main antialiased font-sans;
+  }
+}
+
+@layer components {
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-military-border p-6 relative overflow-hidden;
+  }
+
+  /* Tables */
+  .table-header {
+    @apply bg-military-100 text-text-secondary text-left text-xs uppercase font-semibold h-11 px-4 tracking-wider;
+  }
+
+  .table-row {
+    @apply border-b border-gray-100 hover:bg-military-100/50 transition-colors;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-sm text-text-main;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-military-600 hover:bg-military-500 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-white border border-gray-300 hover:bg-gray-50 text-text-main font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2;
+  }
+
+  .btn-danger {
+    @apply bg-status-danger hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 shadow-sm;
+  }
+
+  /* Inputs */
+  .input-field {
+    @apply w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-text-main outline-none focus:border-military-500 focus:ring-1 focus:ring-military-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500;
+  }
+
+  .input-label {
+    @apply block text-sm font-medium text-text-main mb-1.5;
+  }
+
+  /* Badges */
+  .badge-success {
+    @apply bg-green-50 text-status-success text-xs font-semibold px-2.5 py-1 rounded-full border border-green-200 uppercase tracking-wide;
+  }
+
+  .badge-danger {
+    @apply bg-red-50 text-status-danger text-xs font-semibold px-2.5 py-1 rounded-full border border-red-200 uppercase tracking-wide;
+  }
+
+  .badge-warning {
+    @apply bg-amber-50 text-status-warning text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200 uppercase tracking-wide;
+  }
+
+  .badge-info {
+    @apply bg-blue-50 text-status-info text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 uppercase tracking-wide;
+  }
+
+  .badge-gray {
+    @apply bg-gray-50 text-text-secondary text-xs font-semibold px-2.5 py-1 rounded-full border border-gray-200 uppercase tracking-wide;
+  }
+
+  .badge-purple {
+    @apply bg-purple-50 text-purple-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-purple-200 uppercase tracking-wide;
+  }
+}
+
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print,
+  header,
+  aside,
+  .sidebar {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
